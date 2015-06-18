@@ -1,6 +1,8 @@
-from novaclient import client
-import common
 import logging
+
+from novaclient import client
+
+from evacuationd.commons import common
 
 
 class NovaWrapper:

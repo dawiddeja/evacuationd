@@ -1,5 +1,0 @@
-[Unit]
-Description=Automatic Evacuation daemon
-
-[Service]
-ExecStart=/usr/bin/python /usr/share/evac/evacuationd/server.py

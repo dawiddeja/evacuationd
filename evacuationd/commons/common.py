@@ -1,7 +1,6 @@
 import json
 import ConfigParser
-
-from common import action
+from evacuationd.commons import action
 
 
 def create_vm_message(vm_id, host):

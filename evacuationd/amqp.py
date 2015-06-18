@@ -5,8 +5,7 @@ import traceback
 
 import pika
 
-import common
-from common import action
+from evacuationd.commons import common, action
 from evacuationd.nova_wrapper import NovaWrapper
 
 
