@@ -11,7 +11,6 @@ import pika
 sys.path.append("/usr/share/fence")
 from fencing import *
 from fencing import run_delay
-sys.path.append("/usr/share/evac")
 from evacuationd.commons import action
 
 
