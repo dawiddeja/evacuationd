@@ -7,10 +7,9 @@ import atexit
 
 import pika
 
-
 sys.path.append("/usr/share/fence")
-from fencing import *
-from fencing import run_delay
+from fencing import run_delay, all_opt, atexit_handler, check_input, \
+        process_input, show_docs
 from evacuationd.commons import action
 
 
@@ -18,7 +17,9 @@ def define_new_opts():
     all_opt["domain"] = {
         "getopt": "d:",
         "longopt": "domain",
-        "help": "-d, --domain=[string]          DNS domain in which hosts live, useful when the cluster uses short names and nova uses FQDN",
+        "help": "-d, --domain=[string]          DNS domain in which hosts"
+                         " live, useful when the cluster uses short names and"
+                         " nova uses FQDN",
         "required": "0",
         "shortdesc": "DNS domain in which hosts live",
         "default": "",
@@ -72,19 +73,22 @@ def create_body(host):
 
 def send(user, password, host, port, exchange, routing_key, host_down):
     credentials = pika.PlainCredentials(user, password)
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=host,
-                                                                   port=port,
-                                                                   credentials=credentials))
+    connection = pika.BlockingConnection(pika. \
+            ConnectionParameters(host=host, port=port,
+                                 credentials=credentials))
 
     channel = connection.channel()
-    channel.exchange_declare(exchange=exchange, type='direct', auto_delete=True)
-    channel.basic_publish(exchange=exchange, routing_key=routing_key, body=create_body(host_down))
+    channel.exchange_declare(exchange=exchange, type='direct',
+                             auto_delete=True)
+    channel.basic_publish(exchange=exchange, routing_key=routing_key,
+                          body=create_body(host_down))
 
 
 def main():
     atexit.register(atexit_handler)
 
-    device_opt = ["rabbit_hosts", "rabbit_port", "user", "domain", "password", "port"]
+    device_opt = ["rabbit_hosts", "rabbit_port", "user", "domain", "password",
+                  "port"]
     define_new_opts()
     all_opt["shell_timeout"]["default"] = "180"
 
@@ -121,10 +125,12 @@ def main():
 
         for rabbit_host in rabbit_hosts:
             try:
-                send(user, password, rabbit_host, port, exchange, routing_key, host)
+                send(user, password, rabbit_host, port, exchange, routing_key,
+                     host)
                 sys.exit(0)
             except Exception:
-                logging.warning('Cannot connect to rabbitmq on %s' % rabbit_host)
+                logging.warning('Cannot connect to rabbitmq on %s',
+                                rabbit_host)
 
         logging.error('Cannot connect to any of rabbitmq brokers')
         sys.exit(1)

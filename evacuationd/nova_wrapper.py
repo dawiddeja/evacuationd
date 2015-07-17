@@ -5,7 +5,7 @@ from novaclient import client
 from evacuationd.commons import common
 
 
-class NovaWrapper:
+class NovaWrapper(object):
 
     def __init__(self, on_shared_storage):
         self._logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class NovaWrapper:
             for server in hypervisor.servers:
                 result.append(server['uuid'])
 
-        self._logger.debug('Result: %s' % str(result))
+        self._logger.debug('Result: %s', str(result))
         return result
 
     def evac_vm(self, vm_id, host):

@@ -14,9 +14,9 @@ def main():
         try:
             server = amqp.Amqp()
             server.listen()
-        except Exception as e:
+        except Exception as exc:
             logger.error('Error while connecting to cluster')
-            logger.debug(str(e))
+            logger.debug(str(exc))
             logging.info('Will wait 5s, and reconnect')
             time.sleep(5)
 
