@@ -5,9 +5,20 @@ import traceback
 
 import pika
 
-
 from evacuationd.commons import common, action
 from evacuationd.nova_wrapper import NovaWrapper
+
+
+class AmqpError(Exception):
+    pass
+
+
+class AmqpConnectionError(AmqpError):
+    pass
+
+
+class AmqpChannelError(AmqpError):
+    pass
 
 
 class Amqp(object):
@@ -22,6 +33,7 @@ class Amqp(object):
 
         self._exchange = conf['exchange']
         self._nova = NovaWrapper(conf['on_shared_storage'])
+        self._channel = None
 
         credentials = pika.PlainCredentials(conf['user'], conf['password'])
 
@@ -33,11 +45,20 @@ class Amqp(object):
                                              credentials=credentials))
                 self._logger.info('Connected to %s', str(host))
                 break
-            except Exception as err:
+            except pika.exceptions.AMQPConnectionError as err:
                 self._logger.warning('Cannot connect to host %s', host)
                 self._logger.debug(str(err))
 
-        self._channel = connection.channel()
+        if connection is None:
+            raise AmqpConnectionError("Cannot connect to any provided hosts")
+
+        try:
+            self._channel = connection.channel()
+        except pika.exceptions.AMQPChannelError as err:
+            self._logger.warning('Cannot connect to host %s', host)
+            self._logger.debug(str(err))
+            raise AmqpChannelError(err.message)
+
         self._channel.exchange_declare(exchange=conf['exchange'],
                                        type='direct', auto_delete=True)
 
@@ -68,9 +89,9 @@ class Amqp(object):
 
         try:
             msg = json.loads(body)
-        except Exception as e:
-            self._logger.error("Failed to convert message ody into dict")
-            self._logger.debug((str(e)))
+        except (ValueError, TypeError) as err:
+            self._logger.error("Failed to convert message body into dict")
+            self._logger.debug(err.message)
             return
 
         resend_flag = False
