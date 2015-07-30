@@ -34,3 +34,11 @@ class NovaWrapper(object):
         vm = self._nova.servers.get(vm_id)
         if vm.to_dict()['OS-EXT-SRV-ATTR:hypervisor_hostname'] == host:
             vm.evacuate(on_shared_storage=self._on_shared_storage)
+        self._logger.info('Request to evacuate VM %s accepted', vm_id)
+
+    def is_host_up(self, host):
+        self._logger.debug('Is host up')
+
+        hypervisor = self._nova.hypervisors.search(host)[0]
+
+        return True if hypervisor.state == 'up' else False

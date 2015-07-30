@@ -5,6 +5,8 @@ import traceback
 
 import pika
 
+from novaclient.exceptions import NotFound, BadRequest
+
 from evacuationd.commons import common, action
 from evacuationd.nova_wrapper import NovaWrapper
 
@@ -104,8 +106,9 @@ class Amqp(object):
                 self._evac_vm(msg['vm'], msg['host'])
             elif msg['action'] == action.ACTION_DUMMY:
                 self._logger.info("Dummy action: %s", str(msg['dummy']))
-        except:  # orety/
+        except Exception as err:  # orety/
             self._logger.error("There was an error while consuming msg")
+            self._logger.debug(type(err))
             self._logger.debug(traceback.format_exc())
             if resend_flag:
                 self.send(body)
@@ -116,9 +119,20 @@ class Amqp(object):
             self._channel.basic_ack(delivery_tag=method.delivery_tag)
 
     def _evac_host(self, host):
-        for server in self._nova.list_vms(host):
-            self._logger.debug('Sending evacuate message for %s', server)
-            self.send(common.create_vm_message(server, host))
+        try:
+            if self._nova.is_host_up(host):
+                self._logger.info('Host %s is still up. Cannot evacuate', host)
+            else:
+                for server in self._nova.list_vms(host):
+                    self._logger.debug('Sending evacuate message for %s',
+                                       server)
+                    self.send(common.create_vm_message(server, host))
+        except NotFound:
+            self._logger.error('Host %s not found', host)
 
     def _evac_vm(self, vm_id, host):
-        self._nova.evac_vm(vm_id, host)
+        try:
+            self._nova.evac_vm(vm_id, host)
+        except BadRequest as err:
+            self._logger.error('Cannot evacuate instance - bad request')
+            self._logger.debug(str(err))
