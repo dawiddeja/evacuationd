@@ -28,12 +28,11 @@ def read_config(section):
 
 
 def get_option(config, section, option):
-    if option in ['on_shared_storage']:
-        opt = config.getboolean(section, option)
-    elif option in ['port']:
-        opt = config.getint(section, option)
-    else:
-        opt = config.get(section, option)
+    type_map = {'on_shared_storage': config.getboolean,
+                'port': config.getint}
+
+    parse_func = type_map.get(option, config.get)
+    opt = parse_func(section, option)
 
     if option in ['hosts']:
         opt = opt.split(',')
