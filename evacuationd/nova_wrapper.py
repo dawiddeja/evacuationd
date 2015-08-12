@@ -44,7 +44,7 @@ class NovaWrapper(object):
 
         hypervisor = self._nova.hypervisors.search(host)[0]
 
-        return True if hypervisor.state == 'up' else False
+        return hypervisor.state == 'up'
 
     @staticmethod
     def _is_host_evacuable(server, flavors):
