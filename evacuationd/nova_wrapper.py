@@ -24,8 +24,11 @@ class NovaWrapper(object):
         hypervisor = self._nova.hypervisors.search(host, servers=True)[0]
 
         if hasattr(hypervisor, 'servers'):
-            for server in hypervisor.servers:
-                result.append(server['uuid'])
+            flavors = self._get_evacuable_flavors()
+            servers = self._nova.servers.list(search_opts={'hypervisor': host})
+            for server in servers:
+                if self._is_host_evacuable(server, flavors):
+                    result.append(server.id)
 
         self._logger.debug('Result: %s', str(result))
         return result
@@ -42,3 +45,24 @@ class NovaWrapper(object):
         hypervisor = self._nova.hypervisors.search(host)[0]
 
         return True if hypervisor.state == 'up' else False
+
+    @staticmethod
+    def _is_host_evacuable(server, flavors):
+        if common.to_bool(server.metadata.get('evacuate')):
+            return True
+        elif 'evacuate' in server.metadata:
+            return False
+
+        if server.flavor['id'] in flavors:
+            return True
+
+        return False
+
+    def _get_evacuable_flavors(self):
+        result = []
+        flavors = self._nova.flavors.list()
+        for flavor in flavors:
+            if common.to_bool(flavor.get_keys().get('evacuation:evacuate')):
+                result.append(flavor.id)
+
+        return result

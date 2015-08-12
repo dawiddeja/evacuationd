@@ -39,3 +39,7 @@ def get_option(config, section, option):
         opt = opt.split(',')
 
     return opt
+
+
+def to_bool(value):
+    return value in ('True', 'true', 'TRUE')
